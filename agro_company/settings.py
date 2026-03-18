@@ -124,20 +124,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'agro_company.wsgi.application'
 
-load_dotenv()
+import environ
 
-tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+environmental_vars = os.path.join(BASE_DIR, '.env')
+
+if os.path.exists(environmental_vars):
+    environ.Env.read_env(environmental_vars)
+
+DEBUG = env('DEBUG',)
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': tmpPostgres.path.decode().replace('/', ''),
-        'USER': tmpPostgres.username,
-        'PASSWORD': tmpPostgres.password,
-        'HOST': tmpPostgres.hostname,
-        'PORT': tmpPostgres.port or 5432,
-        'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
-    }
+    'default': env.db('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
 }
 
 # Password validation
