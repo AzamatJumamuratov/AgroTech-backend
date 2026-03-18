@@ -22,8 +22,7 @@ class AdminRegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
-        user = User.objects.create(**validated_data)
-        user.set_password(password)
+        user = User.objects.create_user(password=password, **validated_data)
         user.is_staff = True  # Делаем админом
         user.save()
         return user
