@@ -10,14 +10,14 @@ class SingletonModelViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         instance = self.get_queryset().first()
         if not instance:
-            return Response({'detail': 'Нет данных'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({}, status=status.HTTP_200_OK)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_queryset().first()
         if not instance:
-            return Response({'detail': 'Нет данных'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({}, status=status.HTTP_200_OK)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
