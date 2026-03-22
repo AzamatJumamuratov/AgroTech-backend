@@ -7,6 +7,13 @@ from news.views import NewsViewSet, NewsImageViewSet
 from core.views import CompanyInfoViewSet, CertificateViewSet, PartnerViewSet, ContactInfoViewSet, SocialLinkViewSet
 from projects.views import ProjectViewSet, ProjectContactViewSet, ProjectCommentViewSet
 
+# AI admin viewsets
+from ai_core.views import AdminAIContextViewSet, generate_article
+
+
+# Админский роутер для AI контекстов
+admin_ai_router = DefaultRouter()
+admin_ai_router.register(r'ai-context', AdminAIContextViewSet, basename='admin-ai-context')
 
 # Публичный роутер (только для чтения)
 public_router = DefaultRouter()
@@ -37,9 +44,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(public_router.urls)),  # Публичное API
     path('api/admin/', include('user.urls')),  # Админское API
+    path('api/admin/', include(admin_ai_router.urls)),  # AI контексты для админов
+    path('api/admin/ai-generate-article/', generate_article, name='admin-generate-article'),
     path('api/contact-info/', contact_info, name='contact-info'),
     path('api/social-links/', social_links, name='social-links'),
 
+    # Новые AI эндпоинты
+    path('api/accounts/', include('accounts.urls')),  # JWT авторизация
+    path('api/ai/', include('ai_search.urls')),  # AI поиск
+    path('api/ai/chat/', include('ai_chat.urls')),  # AI чат
 ]
 
 # Добавляем media файлы для разработки

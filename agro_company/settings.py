@@ -81,6 +81,12 @@ INSTALLED_APPS = [
     'projects',  # Должно быть
     'user',
     'taggit',
+
+    # Новые AI приложения
+    'accounts',
+    'ai_core',
+    'ai_search',
+    'ai_chat',
 ]
 
 MIDDLEWARE = [
@@ -210,7 +216,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',  # Добавь эту строку
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -224,4 +231,28 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.FormParser',
     ],
+    # Rate limiting для AI эндпоинтов
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'ai_chat': '30/hour',
+        'ai_search': '60/hour',
+    },
 }
+
+# JWT настройки
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+# AI настройки (Google Gemini)
+GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
+GEMINI_MODEL = 'gemini-2.5-flash'
+GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001'
+EMBEDDING_DIMENSION = 3072
