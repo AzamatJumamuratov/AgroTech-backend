@@ -139,6 +139,7 @@ environmental_vars = os.path.join(BASE_DIR, '.env')
 
 if os.path.exists(environmental_vars):
     environ.Env.read_env(environmental_vars)
+    load_dotenv(environmental_vars)
 
 DEBUG = env('DEBUG',)
 
@@ -252,7 +253,7 @@ SIMPLE_JWT = {
 }
 
 # AI настройки (Google Gemini)
-GEMINI_API_KEY = env('GEMINI_API_KEY', default='')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '').strip()
 GEMINI_MODEL = 'gemini-2.5-flash'
 GEMINI_EMBEDDING_MODEL = 'gemini-embedding-001'
 EMBEDDING_DIMENSION = 3072
