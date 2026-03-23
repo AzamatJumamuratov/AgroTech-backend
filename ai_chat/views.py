@@ -7,6 +7,7 @@ from .models import ChatSession
 from .serializers import (
     ChatSessionSerializer,
     ChatSessionListSerializer,
+    CreateSessionSerializer,
     SendMessageSerializer,
     ChatResponseSerializer,
 )
@@ -25,10 +26,37 @@ def sessions_list(request):
         serializer = ChatSessionListSerializer(sessions, many=True)
         return Response(serializer.data)
 
-    # POST — создать новую сессию
+    # POST — создать чат с первым сообщением
+    # Body: { "message": "Что посоветуете сажать в Нукусе?" }
+    input_ser = CreateSessionSerializer(data=request.data)
+    if not input_ser.is_valid():
+        return Response(input_ser.errors, status=status.HTTP_400_BAD_REQUEST)
+
     session = ChatSession.objects.create(user=request.user)
-    serializer = ChatSessionSerializer(session)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    user_message = input_ser.validated_data['message']
+
+    try:
+        result = process_message(session, user_message)
+        session.refresh_from_db()
+
+        return Response({
+            'session': ChatSessionSerializer(session).data,
+            'response': {
+                'text': result['text'],
+                'pdf_url': result.get('pdf_url'),
+                'sources': result.get('sources', []),
+                'related_projects': result.get('related_projects', []),
+                'contact_sent': result.get('contact_sent'),
+            }
+        }, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        # Удаляем пустую сессию если AI упал
+        session.delete()
+        return Response(
+            {'error': f'Ошибка AI: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET', 'DELETE'])
@@ -82,6 +110,7 @@ def send_message(request, session_id):
             'pdf_url': result.get('pdf_url'),
             'sources': result.get('sources', []),
             'related_projects': result.get('related_projects', []),
+            'contact_sent': result.get('contact_sent'),
         })
 
     except Exception as e:

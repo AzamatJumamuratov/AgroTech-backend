@@ -99,6 +99,56 @@ def _detect_language(text):
     return 'en'
 
 
+def _try_send_contact(user, user_message, ai_response):
+    """Если юзер хочет связаться с компанией — создаём ProjectContact за него.
+
+    Возвращает dict с инфой о созданном контакте или None.
+    """
+    from projects.models import ProjectContact
+
+    # Ключевые слова намерения "связаться"
+    contact_keywords = [
+        'связаться', 'обратиться', 'написать', 'позвонить', 'заявка',
+        'хочу заказать', 'контакт', 'байланыс', 'хабарласыу',
+        'contact', 'reach out', 'send message', 'отправить сообщение',
+        'оставить заявку', 'заявку отправ',
+    ]
+
+    if not any(kw in user_message.lower() for kw in contact_keywords):
+        return None
+
+    try:
+        # Используем данные профиля юзера
+        name = f"{user.first_name} {user.last_name}".strip() or user.username
+        email = user.email or ''
+        phone = ''
+        if hasattr(user, 'profile'):
+            phone = user.profile.phone or ''
+
+        if not email:
+            return None  # Без email не отправляем
+
+        contact = ProjectContact.objects.create(
+            name=name,
+            email=email,
+            phone=phone,
+            message=f"[Отправлено через AI-чат]\n\nЗапрос пользователя: {user_message[:500]}",
+        )
+
+        logger.info(f'Контакт #{contact.pk} создан через чат для {user.username}')
+
+        return {
+            'id': contact.pk,
+            'name': name,
+            'email': email,
+            'message': user_message[:200],
+        }
+
+    except Exception as e:
+        logger.warning(f'Ошибка создания контакта: {e}')
+        return None
+
+
 def _find_related_projects(ai_response):
     """Ищет проекты, связанные с ответом ИИ."""
     from projects.models import Project
@@ -188,6 +238,9 @@ def process_message(session, user_message):
         except Exception as e:
             logger.warning(f'Ошибка генерации PDF: {e}')
 
+    # Пробуем отправить контакт если юзер хочет связаться
+    contact_sent = _try_send_contact(session.user, user_message, ai_response)
+
     # Находим связанные проекты
     related_projects = _find_related_projects(ai_response)
 
@@ -204,6 +257,8 @@ def process_message(session, user_message):
     }
     if pdf_url:
         metadata['pdf_url'] = pdf_url
+    if contact_sent:
+        metadata['contact_sent'] = contact_sent
 
     ChatMessage.objects.create(
         session=session,
@@ -222,4 +277,5 @@ def process_message(session, user_message):
         'pdf_url': pdf_url,
         'sources': sources,
         'related_projects': related_projects,
+        'contact_sent': contact_sent,
     }

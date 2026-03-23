@@ -34,6 +34,11 @@ class ChatSessionListSerializer(serializers.ModelSerializer):
         return obj.messages.count()
 
 
+class CreateSessionSerializer(serializers.Serializer):
+    """Создание чата с первым сообщением."""
+    message = serializers.CharField(max_length=2000)
+
+
 class SendMessageSerializer(serializers.Serializer):
     """Входные данные для отправки сообщения."""
     message = serializers.CharField(max_length=2000)
