@@ -163,6 +163,11 @@ class NewsViewSet(viewsets.ModelViewSet):
         if 'image' in request.FILES:
             data['image'] = request.FILES['image']
             logger.debug("Updated main image")
+        elif 'image' in request.data:
+            # Если передано пустое значение (null, '', 'null'), очищаем изображение
+            if request.data.get('image') in ('', 'null', None):
+                data['image'] = None
+                logger.debug("Cleared main image")
 
         # Обрабатываем дополнительные изображения
         images_data = self._process_images_data(request.data)
